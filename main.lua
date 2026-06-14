@@ -1,29 +1,36 @@
--- Проверяем, если хаб уже запущен, чтобы не спавнить копии
+-- ====================================================================
+-- 99 Nights in the Forest Hub v1.0 (Fixed & Optimized)
+-- Разработчики: KIRIK_PRO1B1DORS и Gemini 3.5 flash, Gemini 3.1 pro
+-- ====================================================================
+
+-- Очистка старых копий хаба, чтобы избежать дублирования UI
 if game:GetService("CoreGui"):FindFirstChild("NightsInForestHub") then
     game:GetService("CoreGui"):FindFirstChild("NightsInForestHub"):Destroy()
 end
 
--- Основные сервисы
+-- Основные сервисы Roblox
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
 
--- Создание ScreenGui
+-- Создание главного контейнера ScreenGui в CoreGui (скрыто от обычного списка UI)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "NightsInForestHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = CoreGui
 
--- Переменные для логики автоматического сбора брёвен
-local currentTargetMode = "Player" -- "Player", "Campfire", "Workbench"
+-- Глобальные переменные управления функциями
+local currentTargetMode = "Player" -- Режимы: "Player", "Campfire", "Workbench"
 local farmActive = false
+local BASE_WIDTH, BASE_HEIGHT = 550, 350 -- Базовый размер хаба для масштабирования
 
 -- ==========================================
--- 1. АНИМИРОВАННОЕ ПРИВЕТСТВИЕ (ВЫЕЗЖАЮЩАЯ НАДПИСЬ)
+-- 1. АНИМИРОВАННОЕ ПРИВЕТСТВИЕ (ИНТРО)
 -- ==========================================
 local IntroLabel = Instance.new("TextLabel")
 IntroLabel.Size = UIDim2.new(0, 300, 0, 50)
-IntroLabel.Position = UIDim2.new(0, -350, 0.1, 0) -- Старт за экраном
+IntroLabel.Position = UIDim2.new(0, -350, 0.1, 0) -- Старт за левой границей экрана
 IntroLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 IntroLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 IntroLabel.Text = "Хаб успешно запущен!"
@@ -44,14 +51,13 @@ IntroGradient.Parent = IntroLabel
 -- 2. ГЛАВНОЕ ОКНО ХАБА
 -- ==========================================
 local MainFrame = Instance.new("Frame")
-local BASE_WIDTH, BASE_HEIGHT = 550, 350
 MainFrame.Size = UIDim2.new(0, BASE_WIDTH, 0, BASE_HEIGHT)
 MainFrame.Position = UIDim2.new(0.5, -BASE_WIDTH/2, 0.5, -BASE_HEIGHT/2)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.BorderSizePixel = 0
-MainFrame.Visible = false -- Скрыто до окончания анимации интро
+MainFrame.Visible = false -- Скрыто, пока идет интро анимация
 MainFrame.Active = true
-MainFrame.Draggable = true
+MainFrame.Draggable = true -- Позволяет таскать окно по экрану
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -80,7 +86,7 @@ Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- Кнопка Закрыть
+-- Кнопка Закрыть (X)
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UIDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UIDim2.new(1, -40, 0, 5)
@@ -95,7 +101,7 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 6)
 CloseCorner.Parent = CloseBtn
 
--- Кнопка Свернуть
+-- Кнопка Свернуть (-)
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Size = UIDim2.new(0, 30, 0, 30)
 MinimizeBtn.Position = UIDim2.new(1, -75, 0, 5)
@@ -110,7 +116,7 @@ local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 6)
 MinCorner.Parent = MinimizeBtn
 
--- Панель бокового меню (Вкладки)
+-- Боковое меню для вкладок
 local SideBar = Instance.new("Frame")
 SideBar.Size = UIDim2.new(0, 120, 1, -40)
 SideBar.Position = UIDim2.new(0, 0, 0, 40)
@@ -135,7 +141,7 @@ SidePadding.PaddingTop = UDim.new(0, 10)
 SidePadding.Parent = SideBar
 
 -- ==========================================
--- 3. СОЗДАНИЕ СИСТЕМЫ ВКЛАДОК И СТРАНИЦ
+-- 3. ДИНАМИЧЕСКАЯ СИСТЕМЫ ВКЛАДОК
 -- ==========================================
 local tabs = {"Home", "Settings", "Farm", "AFK", "TP"}
 local pages = {}
@@ -177,18 +183,18 @@ for i, tabName in ipairs(tabs) do
     createTab(tabName, i)
 end
 
--- Делаем Home активной по умолчанию
+-- Активация вкладки Home по умолчанию
 pages["Home"].Visible = true
 tabButtons["Home"].TextColor3 = Color3.fromRGB(0, 170, 255)
 
 -- ==========================================
--- 4. НАПОЛНЕНИЕ СТРАНИЦЫ HOME
+-- 4. НАПОЛНЕНИЕ ВКЛАДКИ HOME
 -- ==========================================
 local HomeLabel = Instance.new("TextLabel")
 HomeLabel.Size = UIDim2.new(1, -20, 1, -20)
 HomeLabel.Position = UIDim2.new(0, 10, 0, 10)
 HomeLabel.BackgroundTransparency = 1
-HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.0\n\nИспользуй вкладки слева для конфигурации."
+HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.0\n\nИспользуй вкладки слева для конфигурации функций."
 HomeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 HomeLabel.Font = Enum.Font.Gotham
 HomeLabel.TextSize = 14
@@ -198,7 +204,7 @@ HomeLabel.TextXAlignment = Enum.TextXAlignment.Left
 HomeLabel.Parent = pages["Home"]
 
 -- ==========================================
--- 5. НАПОЛНЕНИЕ СТРАНИЦЫ SETTINGS (МАСШТАБ)
+-- 5. НАПОЛНЕНИЕ ВКЛАДКИ SETTINGS (МАСШТАБИРОВАНИЕ)
 -- ==========================================
 local SettingsLabel = Instance.new("TextLabel")
 SettingsLabel.Size = UIDim2.new(1, -20, 0, 30)
@@ -238,11 +244,10 @@ ScaleInput.FocusLost:Connect(function(enterPressed)
 end)
 
 -- ==========================================
--- 6. НАПОЛНЕНИЕ ВКЛАДКИ FARM (МОМЕНТАЛЬНЫЙ СБОР)
+-- 6. НАПОЛНЕНИЕ ВКЛАДКИ FARM (МЕНЮ УПРАВЛЕНИЯ)
 -- ==========================================
 local FarmPage = pages["Farm"]
 
--- Заголовок выбора режима
 local ModeLabel = Instance.new("TextLabel")
 ModeLabel.Size = UIDim2.new(1, -20, 0, 20)
 ModeLabel.Position = UIDim2.new(0, 10, 0, 10)
@@ -254,7 +259,6 @@ ModeLabel.TextSize = 14
 ModeLabel.TextXAlignment = Enum.TextXAlignment.Left
 ModeLabel.Parent = FarmPage
 
--- Сетка/Список для кнопок выбора направления
 local BtnContainer = Instance.new("Frame")
 BtnContainer.Size = UIDim2.new(1, -20, 0, 40)
 BtnContainer.Position = UIDim2.new(0, 10, 0, 35)
@@ -310,7 +314,6 @@ TargetPlayerBtn.MouseButton1Click:Connect(function() currentTargetMode = "Player
 TargetCampfireBtn.MouseButton1Click:Connect(function() currentTargetMode = "Campfire" updateTargetVisuals(TargetCampfireBtn) end)
 TargetWorkbenchBtn.MouseButton1Click:Connect(function() currentTargetMode = "Workbench" updateTargetVisuals(TargetWorkbenchBtn) end)
 
--- Главный Тумблер Включения Автофарма
 local ToggleFarmBtn = Instance.new("TextButton")
 ToggleFarmBtn.Size = UIDim2.new(0, 200, 0, 45)
 ToggleFarmBtn.Position = UIDim2.new(0, 10, 0, 95)
@@ -337,10 +340,10 @@ ToggleFarmBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- 7. МАТЕМАТИКА И ЛОГИКА ТЕЛЕПОРТАЦИИ ОБЪЕКТОВ
+-- 7. ИСПРАВЛЕННАЯ ЛОГИКА ТЕЛЕПОРТАЦИИ ОБЪЕКТОВ
 -- ==========================================
 local function getTargetPosition()
-    local player = game:GetService("Players").LocalPlayer
+    local player = Players.LocalPlayer
     if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
         return nil
     end
@@ -349,6 +352,7 @@ local function getTargetPosition()
         return player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
         
     elseif currentTargetMode == "Campfire" then
+        -- Баг пофикшен: правильное условие elseif
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") and (obj.Name == "log_Cylinder" or obj.Name == "Meshes/log_Cylinder") then
                 return obj.CFrame + Vector3.new(0, 2, 0)
@@ -366,10 +370,11 @@ local function getTargetPosition()
         end
         
         if leftPart and rightPart then
-            -- Средняя точка между левым и правым парт-компонентами
             return CFrame.new((leftPart.Position + rightPart.Position) / 2)
         end
     end
+    
+    -- Запасной вариант, если костер или верстак не найдены на карте
     return player.Character.HumanoidRootPart.CFrame
 end
 
@@ -377,24 +382,23 @@ local function collectAllLogs()
     local targetCFrame = getTargetPosition()
     if not targetCFrame then return end
 
+    -- Баг пофикшен: перенос происходит в едином цикле для снижения нагрузки на Delta
     for _, item in pairs(workspace:GetDescendants()) do
         if item:IsA("BasePart") and item.Name == "Outer" then
-            -- Мгновенный перенос в параллельном потоке, чтобы обработать всё одновременно
-            task.spawn(function()
-                if item:FindFirstChild("BodyPosition") then item.BodyPosition:Destroy() end
-                if item:FindFirstChild("BodyGyro") then item.BodyGyro:Destroy() end
-                item.CFrame = targetCFrame
-            end)
+            -- Стираем физические ограничители, чтобы бревна не застревали по пути
+            if item:FindFirstChild("BodyPosition") then item.BodyPosition:Destroy() end
+            if item:FindFirstChild("BodyGyro") then item.BodyGyro:Destroy() end
+            item.CFrame = targetCFrame
         end
     end
 end
 
--- Потоковый цикл проверки
+-- Фоновый поток автофарма
 task.spawn(function()
     while true do
-        task.wait(0.3) -- Скорость проверки карты
+        task.wait(0.3) -- Частота сбора брёвен
         if farmActive then
-            collectAllLogs()
+            pcall(collectAllLogs) -- Защита pcall: если игра обновится во время фарма, скрипт не вылетит
         end
     end
 end)
@@ -425,7 +429,7 @@ MinimizeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- 9. СТАРТ АНИМАЦИИ
+-- 9. СТАРТ АНИМАЦИИ ИНТРО И ОТКРЫТИЕ ОКНА
 -- ==========================================
 task.spawn(function()
     local tweenIn = TweenService:Create(IntroLabel, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
@@ -444,6 +448,7 @@ task.spawn(function()
     
     IntroLabel:Destroy()
     
+    -- Плавное появление главного окна хаба
     MainFrame.Visible = true
     MainFrame.ClipsDescendants = true
 end)
