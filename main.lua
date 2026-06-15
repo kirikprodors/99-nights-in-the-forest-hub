@@ -1,5 +1,5 @@
 -- ====================================================================
--- 99 Nights in the Forest Hub v1.4 (Physics Wakeup & Custom Notifications)
+-- 99 Nights in the Forest Hub v1.5 (Mammoth Filter & Anti-Crash Fixed)
 -- Разработчик: Кирилл (Оптимизировано ИИ)
 -- ====================================================================
 
@@ -87,7 +87,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "99 Nights Forest Hub v1.4"
+Title.Text = "99 Nights Forest Hub v1.5"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 16
@@ -236,7 +236,7 @@ local HomeLabel = Instance.new("TextLabel")
 HomeLabel.Size = UDim2.new(1, -20, 1, -20)
 HomeLabel.Position = UDim2.new(0, 10, 0, 10)
 HomeLabel.BackgroundTransparency = 1
-HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.4\n\nИспользуй вкладки слева для конфигурации функций."
+HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.5\n\nИспользуй вкладки слева для конфигурации функций."
 HomeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 HomeLabel.Font = Enum.Font.SourceSans
 HomeLabel.TextSize = 14
@@ -358,7 +358,7 @@ local function showNotification(text)
     local NotificationFrame = Instance.new("Frame")
     currentNotification = NotificationFrame
     NotificationFrame.Size = UDim2.new(0, 270, 0, 45)
-    NotificationFrame.Position = UDim2.new(1, 10, 0.85, 0) -- Старт за экраном справа
+    NotificationFrame.Position = UDim2.new(1, 10, 0.85, 0)
     NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     NotificationFrame.BorderSizePixel = 0
     NotificationFrame.Parent = ScreenGui
@@ -458,7 +458,7 @@ local function getWorkbenchPosition()
     return nil
 end
 
--- Потоковая функция сбора бревен (с принудительным Wakeup и захватом Network Ownership)
+-- Потоковая функция сбора бревен
 local function collectAllLogs(targetMode)
     local player = Players.LocalPlayer
     if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
@@ -468,7 +468,7 @@ local function collectAllLogs(targetMode)
     local destName = ""
     
     if targetMode == "Player" then
-        targetCFrame = hrp.CFrame * UDim2.new(0, 0, 0, 0) -- Будет пересчитано при спавне
+        targetCFrame = hrp.CFrame * CFrame.new(0, 0, -4) -- ИСПРАВЛЕНО: Никаких UDim2! Скрипт больше не падает.
         destName = "player"
     elseif targetMode == "Campfire" then
         targetCFrame = getCampfirePosition()
@@ -486,7 +486,8 @@ local function collectAllLogs(targetMode)
     
     local function scan(container)
         for _, item in pairs(container:GetChildren()) do
-            if item:IsA("BasePart") and item.Name == "Outer" then
+            -- ИСПРАВЛЕНО: Проверяем размер, чтобы полностью игнорировать огромную платформу мамонтов!
+            if item:IsA("BasePart") and item.Name == "Outer" and item.Size.X < 10 and item.Size.Z < 10 then
                 table.insert(logs, item)
             end
         end
@@ -495,7 +496,8 @@ local function collectAllLogs(targetMode)
     scan(itemContainer)
     if itemContainer == workspace then
         for _, item in pairs(workspace:GetDescendants()) do
-            if item:IsA("BasePart") and item.Name == "Outer" then
+            -- ИСПРАВЛЕНО: Платформа мамонтов огромная (более 40 блоков), а бревна маленькие. Фильтруем по размеру.
+            if item:IsA("BasePart") and item.Name == "Outer" and item.Size.X < 10 and item.Size.Z < 10 then
                 if not table.find(logs, item) then
                     table.insert(logs, item)
                 end
@@ -527,14 +529,12 @@ local function collectAllLogs(targetMode)
             end)
             
             if targetMode == "Player" then
-                -- К игроку: просто переносим в радиусе вокруг
-                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    item.CanCollide = true
-                    item.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(math.random(-1, 1) * 2, 0, -4)
-                end
+                -- К игроку: переносим в красивую кучку перед ним
+                item.CanCollide = true
+                item.CFrame = targetCFrame * CFrame.new(math.random(-1, 1) * 2, 0, math.random(-1, 1) * 2)
             else
                 -- К Костру или Дробилке:
-                -- 1. Сначала переносим прямо над головой игрока на 0.02 секунды (захват физики/Network Ownership)
+                -- 1. Сначала переносим прямо над головой игрока на 0.02 секунды (захват Network Ownership)
                 if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                     item.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 6, 0)
                 end
@@ -544,14 +544,14 @@ local function collectAllLogs(targetMode)
                 -- 2. Переносим к цели, приподнимая на 3 блока, и задаем скорость вниз (принудительный Touched)
                 if item and item.Parent then
                     pcall(function()
-                        item.AssemblyLinearVelocity = Vector3.new(0, -6, 0) -- Даем импульс вниз для пробуждения
+                        item.AssemblyLinearVelocity = Vector3.new(0, -6, 0)
                         item.CFrame = targetCFrame * CFrame.new(math.random(-1, 1) * 0.5, 3, math.random(-1, 1) * 0.5)
                     end)
                 end
             end
             
-            -- Небольшой интервал между бревнами, чтобы сервер успевал регистрировать
-            task.wait(0.04)
+            -- Интервал между бревнами, чтобы сервер успевал регистрировать
+            task.wait(0.03)
         end
     end)
 end
