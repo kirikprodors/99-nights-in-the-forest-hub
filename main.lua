@@ -1,5 +1,5 @@
 -- ====================================================================
--- 99 Nights in the Forest Hub v1.1 (Fixed, Scalable & Anti-Cheat Safe)
+-- 99 Nights in the Forest Hub v1.2 (Fixed Logs & Added Fly Platform)
 -- Разработчик: Кирилл (Оптимизировано ИИ)
 -- ====================================================================
 
@@ -87,7 +87,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "99 Nights Forest Hub v1.1"
+Title.Text = "99 Nights Forest Hub v1.2"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 16
@@ -153,7 +153,6 @@ SidePadding.Parent = SideBar
 -- ==========================================
 local dragging, dragInput, dragStart, startPos
 local function updateDrag(input)
-    -- Делим дельту на масштаб, чтобы скорость движения мыши совпадала с масштабом окна
     local delta = (input.Position - dragStart) / UiScale.Scale
     MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
@@ -187,7 +186,7 @@ end)
 -- ==========================================
 -- 3. ДИНАМИЧЕСКАЯ СИСТЕМА ВКЛАДОК
 -- ==========================================
-local tabs = {"Home", "Settings", "Farm", "AFK", "TP"}
+local tabs = {"Home", "Settings", "Farm", "Platform", "AFK", "TP"}
 local pages = {}
 local tabButtons = {}
 
@@ -237,7 +236,7 @@ local HomeLabel = Instance.new("TextLabel")
 HomeLabel.Size = UDim2.new(1, -20, 1, -20)
 HomeLabel.Position = UDim2.new(0, 10, 0, 10)
 HomeLabel.BackgroundTransparency = 1
-HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.1 (Оптимизированная)\n\nИспользуй вкладки слева для конфигурации функций."
+HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.2 (Исправленная)\n\nИспользуй вкладки слева для конфигурации функций."
 HomeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 HomeLabel.Font = Enum.Font.SourceSans
 HomeLabel.TextSize = 14
@@ -247,7 +246,7 @@ HomeLabel.TextXAlignment = Enum.TextXAlignment.Left
 HomeLabel.Parent = pages["Home"]
 
 -- ==========================================
--- 5. НАПОЛНЕНИЕ ВКЛАДКИ SETTINGS (БЕЗУПРЕЧНЫЙ МАСШТАБ)
+-- 5. НАПОЛНЕНИЕ ВКЛАДКИ SETTINGS (МАСШТАБИРОВАНИЕ)
 -- ==========================================
 local SettingsLabel = Instance.new("TextLabel")
 SettingsLabel.Size = UDim2.new(1, -20, 0, 30)
@@ -277,7 +276,6 @@ ScaleCorner.Parent = ScaleInput
 ScaleInput.FocusLost:Connect(function(enterPressed)
     local num = tonumber(ScaleInput.Text)
     if num and num >= 0.3 and num <= 3 then
-        -- Плавно меняем масштаб всего хаба через UIScale
         local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         TweenService:Create(UiScale, tweenInfo, {Scale = num}):Play()
     else
@@ -294,7 +292,7 @@ local ModeLabel = Instance.new("TextLabel")
 ModeLabel.Size = UDim2.new(1, -20, 0, 30)
 ModeLabel.Position = UDim2.new(0, 10, 0, 10)
 ModeLabel.BackgroundTransparency = 1
-ModeLabel.Text = "Сбор и телепортация бревен (Outer + Меш):"
+ModeLabel.Text = "Сбор и телепортация бревен (Log):"
 ModeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 ModeLabel.Font = Enum.Font.SourceSans
 ModeLabel.TextSize = 14
@@ -347,6 +345,83 @@ TpWorkbenchCorner.CornerRadius = UDim.new(0, 6)
 TpWorkbenchCorner.Parent = TpWorkbenchBtn
 
 -- ==========================================
+-- 6.5 НАПОЛНЕНИЕ ВКЛАДКИ PLATFORM (НОВАЯ)
+-- ==========================================
+local PlatformPage = pages["Platform"]
+
+local PlatformLabel = Instance.new("TextLabel")
+PlatformLabel.Size = UDim2.new(1, -20, 0, 30)
+PlatformLabel.Position = UDim2.new(0, 10, 0, 10)
+PlatformLabel.BackgroundTransparency = 1
+PlatformLabel.Text = "Управление летающей платформой мамонтов (Outer):"
+PlatformLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+PlatformLabel.Font = Enum.Font.SourceSans
+PlatformLabel.TextSize = 14
+PlatformLabel.TextXAlignment = Enum.TextXAlignment.Left
+PlatformLabel.Parent = PlatformPage
+
+-- Кнопка: Притянуть под ноги
+local PullPlatformBtn = Instance.new("TextButton")
+PullPlatformBtn.Size = UDim2.new(1, -20, 0, 45)
+PullPlatformBtn.Position = UDim2.new(0, 10, 0, 50)
+PullPlatformBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+PullPlatformBtn.Text = "Телепортировать платформу под ноги"
+PullPlatformBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PullPlatformBtn.Font = Enum.Font.SourceSansBold
+PullPlatformBtn.TextSize = 14
+PullPlatformBtn.Parent = PlatformPage
+
+local PullPlatformCorner = Instance.new("UICorner")
+PullPlatformCorner.CornerRadius = UDim.new(0, 6)
+PullPlatformCorner.Parent = PullPlatformBtn
+
+-- Кнопка: Поднять выше (+10)
+local PlatformUpBtn = Instance.new("TextButton")
+PlatformUpBtn.Size = UDim2.new(0.5, -15, 0, 45)
+PlatformUpBtn.Position = UDim2.new(0, 10, 0, 110)
+PlatformUpBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+PlatformUpBtn.Text = "Выше (+10)"
+PlatformUpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlatformUpBtn.Font = Enum.Font.SourceSansBold
+PlatformUpBtn.TextSize = 14
+PlatformUpBtn.Parent = PlatformPage
+
+local PlatformUpCorner = Instance.new("UICorner")
+PlatformUpCorner.CornerRadius = UDim.new(0, 6)
+PlatformUpCorner.Parent = PlatformUpBtn
+
+-- Кнопка: Опустить ниже (-10)
+local PlatformDownBtn = Instance.new("TextButton")
+PlatformDownBtn.Size = UDim2.new(0.5, -15, 0, 45)
+PlatformDownBtn.Position = UDim2.new(0.5, 5, 0, 110)
+PlatformDownBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+PlatformDownBtn.Text = "Ниже (-10)"
+PlatformDownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlatformDownBtn.Font = Enum.Font.SourceSansBold
+PlatformDownBtn.TextSize = 14
+PlatformDownBtn.Parent = PlatformPage
+
+local PlatformDownCorner = Instance.new("UICorner")
+PlatformDownCorner.CornerRadius = UDim.new(0, 6)
+PlatformDownCorner.Parent = PlatformDownBtn
+
+-- Кнопка: Вернуть обратно
+local ResetPlatformBtn = Instance.new("TextButton")
+ResetPlatformBtn.Size = UDim2.new(1, -20, 0, 45)
+ResetPlatformBtn.Position = UDim2.new(0, 10, 0, 170)
+ResetPlatformBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+ResetPlatformBtn.Text = "Вернуть платформу на Вулкан"
+ResetPlatformBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ResetPlatformBtn.Font = Enum.Font.SourceSansBold
+ResetPlatformBtn.TextSize = 14
+ResetPlatformBtn.Parent = PlatformPage
+
+local ResetPlatformCorner = Instance.new("UICorner")
+ResetPlatformCorner.CornerRadius = UDim.new(0, 6)
+ResetPlatformCorner.Parent = ResetPlatformBtn
+
+
+-- ==========================================
 -- 7. ЛОГИКА ОПРЕДЕЛЕНИЯ ЦЕЛЕЙ И ПЕРЕНОСА ОБЪЕКТОВ
 -- ==========================================
 
@@ -359,7 +434,7 @@ local function getCampfirePosition()
     local logCylinder = model and model:FindFirstChild("Meshes/log_Cylinder")
     
     if logCylinder and logCylinder:IsA("BasePart") then
-        return logCylinder.CFrame + Vector3.new(0, 3, 0) -- Высота 3, чтобы бревна упали сверху
+        return logCylinder.CFrame + Vector3.new(0, 3, 0)
     end
     
     if mainFire then
@@ -386,7 +461,6 @@ local function getWorkbenchPosition()
     end
     
     if leftPart and rightPart then
-        -- Находим середину между левой и правой шестеренкой
         return CFrame.new((leftPart.Position + rightPart.Position) / 2) + Vector3.new(0, 1.5, 0)
     end
     
@@ -402,14 +476,13 @@ local function getWorkbenchPosition()
     return nil
 end
 
--- Функция сбора бревен
+-- Функция сбора НАСТОЯЩИХ бревен (исправлен поиск)
 local function collectAllLogs(targetMode)
     local targetCFrame
     
     if targetMode == "Player" then
         local player = Players.LocalPlayer
         if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            -- Телепортируем прямо в игрока, чтобы они мгновенно попали в мешок
             targetCFrame = player.Character.HumanoidRootPart.CFrame
         end
     elseif targetMode == "Campfire" then
@@ -420,45 +493,33 @@ local function collectAllLogs(targetMode)
     
     if not targetCFrame then return end
     
-    -- Быстрый поиск папки дропов, чтобы пощадить процессор телефона
+    -- Быстрый поиск в папках предметов, чтобы не лагало
     local itemContainer = workspace:FindFirstChild("Drops") or workspace:FindFirstChild("ItemSpawns") or workspace:FindFirstChild("Loot") or workspace
     
     local function processItem(item)
-        if item:IsA("BasePart") and item.Name == "Outer" then
-            -- Стираем старые физические ограничители, чтобы избежать зависания бревен в воздухе
+        -- ИСПРАВЛЕНО: ищем только "Log" (настоящее дерево) вместо "Outer" (платформа)!
+        if item:IsA("BasePart") and (item.Name == "Log" or item.Name == "log") then
             if item:FindFirstChild("BodyPosition") then item.BodyPosition:Destroy() end
             if item:FindFirstChild("BodyGyro") then item.BodyGyro:Destroy() end
             
-            -- Сбрасываем физическую скорость, чтобы снизить шансы резинового отката античитом
             pcall(function()
                 item.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                 item.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
             end)
             
-            -- Проверяем, находится ли Outer внутри полноценной модели бревна
             local logModel = item.Parent
             if logModel and logModel:IsA("Model") then
-                -- Перемещаем ВСЮ модель целиком (вместе с мешем Meshes/log_Cylinder)
                 logModel:PivotTo(targetCFrame)
             else
-                -- Если модели нет, перемещаем Outer и его визуальный меш вручную
                 item.CFrame = targetCFrame
-                if logModel then
-                    local visual = logModel:FindFirstChild("Meshes/log_Cylinder") or logModel:FindFirstChild("log_Cylinder")
-                    if visual and visual:IsA("BasePart") then
-                        visual.CFrame = targetCFrame
-                    end
-                end
             end
         end
     end
     
-    -- Сначала быстро перебираем предметы в контейнере дропов
     for _, item in pairs(itemContainer:GetChildren()) do
         processItem(item)
     end
     
-    -- Если контейнер не найден и бревна лежат в общем пространстве, делаем полный перебор
     if itemContainer == workspace then
         for _, item in pairs(workspace:GetDescendants()) do
             processItem(item)
@@ -479,6 +540,76 @@ TpWorkbenchBtn.MouseButton1Click:Connect(function()
     collectAllLogs("Workbench")
 end)
 
+
+-- ==========================================
+-- 7.5 ЛОГИКА УПРАВЛЕНИЯ ПЛАТФОРМОЙ (FLY PLATFORM)
+-- ==========================================
+
+local originalPlatformCFrames = {} -- Память для оригинальных позиций платформ
+
+-- Функция поиска платформы мамонтов (тот самый Outer)
+local function findPlatformParts()
+    local found = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name == "Outer" then
+            table.insert(found, obj)
+        end
+    end
+    return found
+end
+
+-- Притянуть платформу под ноги
+PullPlatformBtn.MouseButton1Click:Connect(function()
+    local player = Players.LocalPlayer
+    if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local hrp = player.Character.HumanoidRootPart
+    -- Рассчитываем позицию на 3.5 блока ниже ног игрока, чтобы ровно стоять
+    local targetCF = hrp.CFrame * CFrame.new(0, -3.5, 0)
+    
+    local parts = findPlatformParts()
+    for _, part in pairs(parts) do
+        -- Сохраняем оригинал для функции сброса
+        if not originalPlatformCFrames[part] then
+            originalPlatformCFrames[part] = part.CFrame
+        end
+        
+        part.CanCollide = true
+        part.CFrame = targetCF
+    end
+end)
+
+-- Поднять платформу вместе с игроком
+PlatformUpBtn.MouseButton1Click:Connect(function()
+    local parts = findPlatformParts()
+    for _, part in pairs(parts) do
+        part.CFrame = part.CFrame * CFrame.new(0, 10, 0)
+    end
+    -- Приподнимаем игрока, чтобы его не протолкнуло сквозь текстуру
+    local player = Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+    end
+end)
+
+-- Опустить платформу
+PlatformDownBtn.MouseButton1Click:Connect(function()
+    local parts = findPlatformParts()
+    for _, part in pairs(parts) do
+        part.CFrame = part.CFrame * CFrame.new(0, -10, 0)
+    end
+end)
+
+-- Вернуть на вулкан
+ResetPlatformBtn.MouseButton1Click:Connect(function()
+    for part, originalCF in pairs(originalPlatformCFrames) do
+        if part and part.Parent then
+            part.CFrame = originalCF
+        end
+    end
+end)
+
+
 -- ==========================================
 -- 8. СВЕРТЫВАНИЕ И ЗАКРЫТИЕ ХАБА
 -- ==========================================
@@ -492,11 +623,9 @@ MinimizeBtn.MouseButton1Click:Connect(function()
     if minimized then
         ContentFrame.Visible = false
         SideBar.Visible = false
-        -- Сворачиваем до базовой высоты (UIScale сам отмасштабирует размер)
         MainFrame.Size = UDim2.new(0, BASE_WIDTH, 0, 40)
         MinimizeBtn.Text = "+"
     else
-        -- Разворачиваем до полной базовой высоты
         MainFrame.Size = UDim2.new(0, BASE_WIDTH, 0, BASE_HEIGHT)
         ContentFrame.Visible = true
         SideBar.Visible = true
