@@ -1,5 +1,5 @@
 -- ====================================================================
--- 99 Nights in the Forest Hub v1.3 (Fixed Logs & Clean UI)
+-- 99 Nights in the Forest Hub v1.4 (Physics Wakeup & Custom Notifications)
 -- Разработчик: Кирилл (Оптимизировано ИИ)
 -- ====================================================================
 
@@ -87,7 +87,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "99 Nights Forest Hub v1.3"
+Title.Text = "99 Nights Forest Hub v1.4"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 16
@@ -236,7 +236,7 @@ local HomeLabel = Instance.new("TextLabel")
 HomeLabel.Size = UDim2.new(1, -20, 1, -20)
 HomeLabel.Position = UDim2.new(0, 10, 0, 10)
 HomeLabel.BackgroundTransparency = 1
-HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.3 (Исправленная)\n\nИспользуй вкладки слева для конфигурации функций."
+HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.4\n\nИспользуй вкладки слева для конфигурации функций."
 HomeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 HomeLabel.Font = Enum.Font.SourceSans
 HomeLabel.TextSize = 14
@@ -346,6 +346,64 @@ TpWorkbenchCorner.Parent = TpWorkbenchBtn
 
 
 -- ==========================================
+-- СИСТЕМА УВЕДОМЛЕНИЙ (Стек замещения)
+-- ==========================================
+local currentNotification = nil
+
+local function showNotification(text)
+    if currentNotification then
+        pcall(function() currentNotification:Destroy() end)
+    end
+
+    local NotificationFrame = Instance.new("Frame")
+    currentNotification = NotificationFrame
+    NotificationFrame.Size = UDim2.new(0, 270, 0, 45)
+    NotificationFrame.Position = UDim2.new(1, 10, 0.85, 0) -- Старт за экраном справа
+    NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NotificationFrame.BorderSizePixel = 0
+    NotificationFrame.Parent = ScreenGui
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = NotificationFrame
+
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = Color3.fromRGB(0, 170, 255)
+    Stroke.Thickness = 1.5
+    Stroke.Parent = NotificationFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(1, -20, 1, 0)
+    Label.Position = UDim2.new(0, 10, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.Font = Enum.Font.SourceSansBold
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = NotificationFrame
+
+    -- Анимация выезда на экран
+    local tweenIn = TweenService:Create(NotificationFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -285, 0.85, 0)
+    })
+    tweenIn:Play()
+
+    -- Исчезновение через 3 секунды
+    task.delay(3, function()
+        if NotificationFrame and NotificationFrame.Parent then
+            local tweenOut = TweenService:Create(NotificationFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(1, 10, 0.85, 0)
+            })
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+            if NotificationFrame then NotificationFrame:Destroy() end
+        end
+    end)
+end
+
+
+-- ==========================================
 -- 7. ЛОГИКА ОПРЕДЕЛЕНИЯ ЦЕЛЕЙ И ПЕРЕНОСА ОБЪЕКТОВ
 -- ==========================================
 
@@ -358,16 +416,16 @@ local function getCampfirePosition()
     local logCylinder = model and model:FindFirstChild("Meshes/log_Cylinder")
     
     if logCylinder and logCylinder:IsA("BasePart") then
-        return logCylinder.CFrame + Vector3.new(0, 3, 0)
+        return logCylinder.CFrame
     end
     
     if mainFire then
-        return mainFire:GetPivot() + Vector3.new(0, 3, 0)
+        return mainFire:GetPivot()
     end
     
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj.Name == "MainFire" then
-            return obj:GetPivot() + Vector3.new(0, 3, 0)
+            return obj:GetPivot()
         end
     end
     return nil
@@ -385,45 +443,81 @@ local function getWorkbenchPosition()
     end
     
     if leftPart and rightPart then
-        return CFrame.new((leftPart.Position + rightPart.Position) / 2) + Vector3.new(0, 2, 0)
+        return CFrame.new((leftPart.Position + rightPart.Position) / 2)
     end
     
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj.Name:lower():find("workbench") or obj.Name:lower():find("grinder") then
             if obj:IsA("Model") then
-                return obj:GetPivot() + Vector3.new(0, 2, 0)
+                return obj:GetPivot()
             elseif obj:IsA("BasePart") then
-                return obj.CFrame + Vector3.new(0, 2, 0)
+                return obj.CFrame
             end
         end
     end
     return nil
 end
 
--- Функция сбора бревен (прямое перемещение деталей Outer без вмешательства в Родителя)
+-- Потоковая функция сбора бревен (с принудительным Wakeup и захватом Network Ownership)
 local function collectAllLogs(targetMode)
+    local player = Players.LocalPlayer
+    if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local hrp = player.Character.HumanoidRootPart
     local targetCFrame
+    local destName = ""
     
     if targetMode == "Player" then
-        local player = Players.LocalPlayer
-        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            -- Телепортируем бревна чуть-чуть впереди игрока, чтобы они аккуратно лежали на земле перед тобой
-            targetCFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -4)
-        end
+        targetCFrame = hrp.CFrame * UDim2.new(0, 0, 0, 0) -- Будет пересчитано при спавне
+        destName = "player"
     elseif targetMode == "Campfire" then
         targetCFrame = getCampfirePosition()
+        destName = "campfire"
     elseif targetMode == "Workbench" then
         targetCFrame = getWorkbenchPosition()
+        destName = "grinder"
     end
     
-    if not targetCFrame then return end
+    if not targetCFrame and targetMode ~= "Player" then return end
     
     -- Ищем бревна в контейнере дропов или по всей карте
+    local logs = {}
     local itemContainer = workspace:FindFirstChild("Drops") or workspace:FindFirstChild("ItemSpawns") or workspace:FindFirstChild("Loot") or workspace
     
-    local function processItem(item)
-        -- Перемещаем бревна (детали Outer)
-        if item:IsA("BasePart") and item.Name == "Outer" then
+    local function scan(container)
+        for _, item in pairs(container:GetChildren()) do
+            if item:IsA("BasePart") and item.Name == "Outer" then
+                table.insert(logs, item)
+            end
+        end
+    end
+    
+    scan(itemContainer)
+    if itemContainer == workspace then
+        for _, item in pairs(workspace:GetDescendants()) do
+            if item:IsA("BasePart") and item.Name == "Outer" then
+                if not table.find(logs, item) then
+                    table.insert(logs, item)
+                end
+            end
+        end
+    end
+    
+    local logCount = #logs
+    if logCount == 0 then
+        showNotification("No logs found to gather!")
+        return
+    end
+    
+    -- Вывод выезжающего текста
+    showNotification("Grab: " .. tostring(logCount) .. " logs to the " .. destName)
+    
+    -- Потоковый перенос бревен (по одному)
+    task.spawn(function()
+        for i, item in ipairs(logs) do
+            if not item or not item.Parent then continue end
+            
+            -- Удаляем физические ограничители
             if item:FindFirstChild("BodyPosition") then item.BodyPosition:Destroy() end
             if item:FindFirstChild("BodyGyro") then item.BodyGyro:Destroy() end
             
@@ -432,21 +526,34 @@ local function collectAllLogs(targetMode)
                 item.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
             end)
             
-            -- Прямое перемещение БЕЗ PivotTo (чтобы не двигать весь Workspace как модель!)
-            item.CanCollide = true
-            item.CFrame = targetCFrame
+            if targetMode == "Player" then
+                -- К игроку: просто переносим в радиусе вокруг
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    item.CanCollide = true
+                    item.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(math.random(-1, 1) * 2, 0, -4)
+                end
+            else
+                -- К Костру или Дробилке:
+                -- 1. Сначала переносим прямо над головой игрока на 0.02 секунды (захват физики/Network Ownership)
+                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    item.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 6, 0)
+                end
+                
+                task.wait(0.02)
+                
+                -- 2. Переносим к цели, приподнимая на 3 блока, и задаем скорость вниз (принудительный Touched)
+                if item and item.Parent then
+                    pcall(function()
+                        item.AssemblyLinearVelocity = Vector3.new(0, -6, 0) -- Даем импульс вниз для пробуждения
+                        item.CFrame = targetCFrame * CFrame.new(math.random(-1, 1) * 0.5, 3, math.random(-1, 1) * 0.5)
+                    end)
+                end
+            end
+            
+            -- Небольшой интервал между бревнами, чтобы сервер успевал регистрировать
+            task.wait(0.04)
         end
-    end
-    
-    for _, item in pairs(itemContainer:GetChildren()) do
-        processItem(item)
-    end
-    
-    if itemContainer == workspace then
-        for _, item in pairs(workspace:GetDescendants()) do
-            processItem(item)
-        end
-    end
+    end)
 end
 
 -- Подключение кнопок сбора к функциям
