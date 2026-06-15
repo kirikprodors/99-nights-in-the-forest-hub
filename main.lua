@@ -1,24 +1,32 @@
 -- ====================================================================
 -- 99 Nights in the Forest Hub v1.0 (Fixed & Optimized)
--- Разработчики: KIRIK_PRO1B1DORS и Gemini 3.5 flash, Gemini 3.1 pro
+-- Разработчик: Кирилл (Исправлено ИИ-коллегой)
 -- ====================================================================
-
--- Очистка старых копий хаба, чтобы избежать дублирования UI
-if game:GetService("CoreGui"):FindFirstChild("NightsInForestHub") then
-    game:GetService("CoreGui"):FindFirstChild("NightsInForestHub"):Destroy()
-end
 
 -- Основные сервисы Roblox
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 
--- Создание главного контейнера ScreenGui в CoreGui (скрыто от обычного списка UI)
+-- Безопасное определение родительского контейнера для UI
+local parentGui
+local success, err = pcall(function()
+    parentGui = (gethui and gethui()) or game:GetService("CoreGui")
+end)
+if not success or not parentGui then
+    parentGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+end
+
+-- Очистка старых копий хаба, чтобы избежать дублирования UI
+if parentGui:FindFirstChild("NightsInForestHub") then
+    parentGui:FindFirstChild("NightsInForestHub"):Destroy()
+end
+
+-- Создание главного контейнера ScreenGui
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "NightsInForestHub"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = CoreGui
+ScreenGui.Parent = parentGui
 
 -- Глобальные переменные управления функциями
 local currentTargetMode = "Player" -- Режимы: "Player", "Campfire", "Workbench"
@@ -29,12 +37,12 @@ local BASE_WIDTH, BASE_HEIGHT = 550, 350 -- Базовый размер хаба
 -- 1. АНИМИРОВАННОЕ ПРИВЕТСТВИЕ (ИНТРО)
 -- ==========================================
 local IntroLabel = Instance.new("TextLabel")
-IntroLabel.Size = UIDim2.new(0, 300, 0, 50)
-IntroLabel.Position = UIDim2.new(0, -350, 0.1, 0) -- Старт за левой границей экрана
+IntroLabel.Size = UDim2.new(0, 300, 0, 50) -- Исправлено: UDim2 вместо UIDim2
+IntroLabel.Position = UDim2.new(0, -350, 0.1, 0) -- Старт за левой границей экрана
 IntroLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 IntroLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 IntroLabel.Text = "Хаб успешно запущен!"
-IntroLabel.Font = Enum.Font.GothamBold
+IntroLabel.Font = Enum.Font.SourceSansBold -- Исправлено: GothamBold устарел
 IntroLabel.TextSize = 18
 IntroLabel.BorderSizePixel = 0
 IntroLabel.Parent = ScreenGui
@@ -51,13 +59,12 @@ IntroGradient.Parent = IntroLabel
 -- 2. ГЛАВНОЕ ОКНО ХАБА
 -- ==========================================
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UIDim2.new(0, BASE_WIDTH, 0, BASE_HEIGHT)
-MainFrame.Position = UIDim2.new(0.5, -BASE_WIDTH/2, 0.5, -BASE_HEIGHT/2)
+MainFrame.Size = UDim2.new(0, BASE_WIDTH, 0, BASE_HEIGHT)
+MainFrame.Position = UDim2.new(0.5, -BASE_WIDTH/2, 0.5, -BASE_HEIGHT/2)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = false -- Скрыто, пока идет интро анимация
 MainFrame.Active = true
-MainFrame.Draggable = true -- Позволяет таскать окно по экрану
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -66,7 +73,7 @@ MainCorner.Parent = MainFrame
 
 -- Верхняя панель (Топбар)
 local TopBar = Instance.new("Frame")
-TopBar.Size = UIDim2.new(1, 0, 0, 40)
+TopBar.Size = UDim2.new(1, 0, 0, 40)
 TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 TopBar.BorderSizePixel = 0
 TopBar.Parent = MainFrame
@@ -76,24 +83,24 @@ TopCorner.CornerRadius = UDim.new(0, 10)
 TopCorner.Parent = TopBar
 
 local Title = Instance.new("TextLabel")
-Title.Size = UIDim2.new(0, 250, 1, 0)
-Title.Position = UIDim2.new(0, 15, 0, 0)
+Title.Size = UDim2.new(0, 250, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Text = "99 Nights Forest Hub v1.0"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
+Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
 -- Кнопка Закрыть (X)
 local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UIDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UIDim2.new(1, -40, 0, 5)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -40, 0, 5)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 CloseBtn.Text = "X"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Font = Enum.Font.SourceSansBold
 CloseBtn.TextSize = 14
 CloseBtn.Parent = TopBar
 
@@ -103,12 +110,12 @@ CloseCorner.Parent = CloseBtn
 
 -- Кнопка Свернуть (-)
 local MinimizeBtn = Instance.new("TextButton")
-MinimizeBtn.Size = UIDim2.new(0, 30, 0, 30)
-MinimizeBtn.Position = UIDim2.new(1, -75, 0, 5)
+MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+MinimizeBtn.Position = UDim2.new(1, -75, 0, 5)
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 MinimizeBtn.Text = "-"
 MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Font = Enum.Font.SourceSansBold
 MinimizeBtn.TextSize = 14
 MinimizeBtn.Parent = TopBar
 
@@ -118,15 +125,15 @@ MinCorner.Parent = MinimizeBtn
 
 -- Боковое меню для вкладок
 local SideBar = Instance.new("Frame")
-SideBar.Size = UIDim2.new(0, 120, 1, -40)
-SideBar.Position = UIDim2.new(0, 0, 0, 40)
+SideBar.Size = UDim2.new(0, 120, 1, -40)
+SideBar.Position = UDim2.new(0, 0, 0, 40)
 SideBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 SideBar.BorderSizePixel = 0
 SideBar.Parent = MainFrame
 
 local ContentFrame = Instance.new("Frame")
-ContentFrame.Size = UIDim2.new(1, -120, 1, -40)
-ContentFrame.Position = UIDim2.new(0, 120, 0, 40)
+ContentFrame.Size = UDim2.new(1, -120, 1, -40)
+ContentFrame.Position = UDim2.new(0, 120, 0, 40)
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Parent = MainFrame
 
@@ -141,7 +148,42 @@ SidePadding.PaddingTop = UDim.new(0, 10)
 SidePadding.Parent = SideBar
 
 -- ==========================================
--- 3. ДИНАМИЧЕСКАЯ СИСТЕМЫ ВКЛАДОК
+-- СКРИПТ ПЕРЕТАСКИВАНИЯ (Поддержка Mobile & PC)
+-- ==========================================
+local dragging, dragInput, dragStart, startPos
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updateDrag(input)
+    end
+end)
+
+-- ==========================================
+-- 3. ДИНАМИЧЕСКАЯ СИСТЕМА ВКЛАДОК
 -- ==========================================
 local tabs = {"Home", "Settings", "Farm", "AFK", "TP"}
 local pages = {}
@@ -149,11 +191,11 @@ local tabButtons = {}
 
 local function createTab(tabName, order)
     local TabBtn = Instance.new("TextButton")
-    TabBtn.Size = UIDim2.new(0, 105, 0, 32)
+    TabBtn.Size = UDim2.new(0, 105, 0, 32)
     TabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     TabBtn.Text = tabName
     TabBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
-    TabBtn.Font = Enum.Font.Gotham
+    TabBtn.Font = Enum.Font.SourceSans
     TabBtn.TextSize = 14
     TabBtn.LayoutOrder = order
     TabBtn.Parent = SideBar
@@ -163,7 +205,7 @@ local function createTab(tabName, order)
     TabBtnCorner.Parent = TabBtn
 
     local Page = Instance.new("Frame")
-    Page.Size = UIDim2.new(1, 0, 1, 0)
+    Page.Size = UDim2.new(1, 0, 1, 0)
     Page.BackgroundTransparency = 1
     Page.Visible = false
     Page.Parent = ContentFrame
@@ -191,12 +233,12 @@ tabButtons["Home"].TextColor3 = Color3.fromRGB(0, 170, 255)
 -- 4. НАПОЛНЕНИЕ ВКЛАДКИ HOME
 -- ==========================================
 local HomeLabel = Instance.new("TextLabel")
-HomeLabel.Size = UIDim2.new(1, -20, 1, -20)
-HomeLabel.Position = UIDim2.new(0, 10, 0, 10)
+HomeLabel.Size = UDim2.new(1, -20, 1, -20)
+HomeLabel.Position = UDim2.new(0, 10, 0, 10)
 HomeLabel.BackgroundTransparency = 1
 HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.0\n\nИспользуй вкладки слева для конфигурации функций."
 HomeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-HomeLabel.Font = Enum.Font.Gotham
+HomeLabel.Font = Enum.Font.SourceSans
 HomeLabel.TextSize = 14
 HomeLabel.TextWrapped = true
 HomeLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -207,23 +249,23 @@ HomeLabel.Parent = pages["Home"]
 -- 5. НАПОЛНЕНИЕ ВКЛАДКИ SETTINGS (МАСШТАБИРОВАНИЕ)
 -- ==========================================
 local SettingsLabel = Instance.new("TextLabel")
-SettingsLabel.Size = UIDim2.new(1, -20, 0, 30)
-SettingsLabel.Position = UIDim2.new(0, 10, 0, 10)
+SettingsLabel.Size = UDim2.new(1, -20, 0, 30)
+SettingsLabel.Position = UDim2.new(0, 10, 0, 10)
 SettingsLabel.BackgroundTransparency = 1
 SettingsLabel.Text = "Изменение масштаба окна (например: 0.5, 1, 1.5):"
 SettingsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-SettingsLabel.Font = Enum.Font.Gotham
+SettingsLabel.Font = Enum.Font.SourceSans
 SettingsLabel.TextSize = 14
 SettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
 SettingsLabel.Parent = pages["Settings"]
 
 local ScaleInput = Instance.new("TextBox")
-ScaleInput.Size = UIDim2.new(0, 100, 0, 30)
-ScaleInput.Position = UIDim2.new(0, 10, 0, 45)
+ScaleInput.Size = UDim2.new(0, 100, 0, 30)
+ScaleInput.Position = UDim2.new(0, 10, 0, 45)
 ScaleInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 ScaleInput.Text = "1"
 ScaleInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-ScaleInput.Font = Enum.Font.GothamBold
+ScaleInput.Font = Enum.Font.SourceSansBold
 ScaleInput.TextSize = 14
 ScaleInput.Parent = pages["Settings"]
 
@@ -237,7 +279,7 @@ ScaleInput.FocusLost:Connect(function(enterPressed)
         local newWidth = BASE_WIDTH * num
         local newHeight = BASE_HEIGHT * num
         local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        TweenService:Create(MainFrame, tweenInfo, {Size = UIDim2.new(0, newWidth, 0, newHeight)}):Play()
+        TweenService:Create(MainFrame, tweenInfo, {Size = UDim2.new(0, newWidth, 0, newHeight)}):Play()
     else
         ScaleInput.Text = "1"
     end
@@ -249,19 +291,19 @@ end)
 local FarmPage = pages["Farm"]
 
 local ModeLabel = Instance.new("TextLabel")
-ModeLabel.Size = UIDim2.new(1, -20, 0, 20)
-ModeLabel.Position = UIDim2.new(0, 10, 0, 10)
+ModeLabel.Size = UDim2.new(1, -20, 0, 20)
+ModeLabel.Position = UDim2.new(0, 10, 0, 10)
 ModeLabel.BackgroundTransparency = 1
 ModeLabel.Text = "Куда телепортировать бревна (Outer):"
 ModeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-ModeLabel.Font = Enum.Font.Gotham
+ModeLabel.Font = Enum.Font.SourceSans
 ModeLabel.TextSize = 14
 ModeLabel.TextXAlignment = Enum.TextXAlignment.Left
 ModeLabel.Parent = FarmPage
 
 local BtnContainer = Instance.new("Frame")
-BtnContainer.Size = UIDim2.new(1, -20, 0, 40)
-BtnContainer.Position = UIDim2.new(0, 10, 0, 35)
+BtnContainer.Size = UDim2.new(1, -20, 0, 40)
+BtnContainer.Position = UDim2.new(0, 10, 0, 35)
 BtnContainer.BackgroundTransparency = 1
 BtnContainer.Parent = FarmPage
 
@@ -271,9 +313,9 @@ BtnLayout.Padding = UDim.new(0, 10)
 BtnLayout.Parent = BtnContainer
 
 local function styleSelectBtn(btn, text)
-    btn.Size = UIDim2.new(0, 110, 0, 35)
+    btn.Size = UDim2.new(0, 110, 0, 35)
     btn.Text = text
-    btn.Font = Enum.Font.GothamBold
+    btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 13
     local crn = Instance.new("UICorner")
     crn.CornerRadius = UDim.new(0, 6)
@@ -315,12 +357,12 @@ TargetCampfireBtn.MouseButton1Click:Connect(function() currentTargetMode = "Camp
 TargetWorkbenchBtn.MouseButton1Click:Connect(function() currentTargetMode = "Workbench" updateTargetVisuals(TargetWorkbenchBtn) end)
 
 local ToggleFarmBtn = Instance.new("TextButton")
-ToggleFarmBtn.Size = UIDim2.new(0, 200, 0, 45)
-ToggleFarmBtn.Position = UIDim2.new(0, 10, 0, 95)
+ToggleFarmBtn.Size = UDim2.new(0, 200, 0, 45)
+ToggleFarmBtn.Position = UDim2.new(0, 10, 0, 95)
 ToggleFarmBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 ToggleFarmBtn.Text = "Auto Farm: OFF"
 ToggleFarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleFarmBtn.Font = Enum.Font.GothamBold
+ToggleFarmBtn.Font = Enum.Font.SourceSansBold
 ToggleFarmBtn.TextSize = 15
 ToggleFarmBtn.Parent = FarmPage
 
@@ -340,7 +382,7 @@ ToggleFarmBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- 7. ИСПРАВЛЕННАЯ ЛОГИКА ТЕЛЕПОРТАЦИИ ОБЪЕКТОВ
+-- 7. ОПТИМИЗИРОВАННАЯ ЛОГИКА ТЕЛЕПОРТАЦИИ ОБЪЕКТОВ
 -- ==========================================
 local function getTargetPosition()
     local player = Players.LocalPlayer
@@ -352,7 +394,13 @@ local function getTargetPosition()
         return player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3)
         
     elseif currentTargetMode == "Campfire" then
-        -- Баг пофикшен: правильное условие elseif
+        -- Быстрый поиск у костра (поверхностный)
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj:IsA("BasePart") and (obj.Name == "log_Cylinder" or obj.Name == "Meshes/log_Cylinder") then
+                return obj.CFrame + Vector3.new(0, 2, 0)
+            end
+        end
+        -- Глубокий поиск, если сверху не нашлось
         for _, obj in pairs(workspace:GetDescendants()) do
             if obj:IsA("BasePart") and (obj.Name == "log_Cylinder" or obj.Name == "Meshes/log_Cylinder") then
                 return obj.CFrame + Vector3.new(0, 2, 0)
@@ -361,12 +409,21 @@ local function getTargetPosition()
         
     elseif currentTargetMode == "Workbench" then
         local leftPart, rightPart
-        for _, obj in pairs(workspace:GetDescendants()) do
+        for _, obj in pairs(workspace:GetChildren()) do
             if obj:IsA("BasePart") then
                 if obj.Name == "GrindersLeft" then leftPart = obj end
                 if obj.Name == "GrindersRight" then rightPart = obj end
             end
-            if leftPart and rightPart then break end
+        end
+        
+        if not (leftPart and rightPart) then
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("BasePart") then
+                    if obj.Name == "GrindersLeft" then leftPart = obj end
+                    if obj.Name == "GrindersRight" then rightPart = obj end
+                end
+                if leftPart and rightPart then break end
+            end
         end
         
         if leftPart and rightPart then
@@ -374,7 +431,6 @@ local function getTargetPosition()
         end
     end
     
-    -- Запасной вариант, если костер или верстак не найдены на карте
     return player.Character.HumanoidRootPart.CFrame
 end
 
@@ -382,13 +438,25 @@ local function collectAllLogs()
     local targetCFrame = getTargetPosition()
     if not targetCFrame then return end
 
-    -- Баг пофикшен: перенос происходит в едином цикле для снижения нагрузки на Delta
-    for _, item in pairs(workspace:GetDescendants()) do
+    -- Оптимизация нагрузки: проверяем папки спавна предметов в игре, чтобы не сканировать весь workspace
+    local itemContainer = workspace:FindFirstChild("Drops") or workspace:FindFirstChild("ItemSpawns") or workspace:FindFirstChild("Loot") or workspace
+    
+    for _, item in pairs(itemContainer:GetChildren()) do
         if item:IsA("BasePart") and item.Name == "Outer" then
-            -- Стираем физические ограничители, чтобы бревна не застревали по пути
             if item:FindFirstChild("BodyPosition") then item.BodyPosition:Destroy() end
             if item:FindFirstChild("BodyGyro") then item.BodyGyro:Destroy() end
             item.CFrame = targetCFrame
+        end
+    end
+    
+    -- Если контейнер не найден и бревна лежат в общем пространстве, делаем полный перебор
+    if itemContainer == workspace then
+        for _, item in pairs(workspace:GetDescendants()) do
+            if item:IsA("BasePart") and item.Name == "Outer" then
+                if item:FindFirstChild("BodyPosition") then item.BodyPosition:Destroy() end
+                if item:FindFirstChild("BodyGyro") then item.BodyGyro:Destroy() end
+                item.CFrame = targetCFrame
+            end
         end
     end
 end
@@ -396,9 +464,9 @@ end
 -- Фоновый поток автофарма
 task.spawn(function()
     while true do
-        task.wait(0.3) -- Частота сбора брёвен
+        task.wait(0.5) -- Интервал увеличен до 0.5с для снижения лагов на смартфонах
         if farmActive then
-            pcall(collectAllLogs) -- Защита pcall: если игра обновится во время фарма, скрипт не вылетит
+            pcall(collectAllLogs)
         end
     end
 end)
@@ -417,11 +485,11 @@ MinimizeBtn.MouseButton1Click:Connect(function()
     if minimized then
         ContentFrame.Visible = false
         SideBar.Visible = false
-        MainFrame.Size = UIDim2.new(0, MainFrame.Size.X.Offset, 0, 40)
+        MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, 40)
         MinimizeBtn.Text = "+"
     else
         local num = tonumber(ScaleInput.Text) or 1
-        MainFrame.Size = UIDim2.new(0, BASE_WIDTH * num, 0, BASE_HEIGHT * num)
+        MainFrame.Size = UDim2.new(0, BASE_WIDTH * num, 0, BASE_HEIGHT * num)
         ContentFrame.Visible = true
         SideBar.Visible = true
         MinimizeBtn.Text = "-"
@@ -432,23 +500,28 @@ end)
 -- 9. СТАРТ АНИМАЦИИ ИНТРО И ОТКРЫТИЕ ОКНА
 -- ==========================================
 task.spawn(function()
+    if not IntroLabel or not ScreenGui then return end
+    
     local tweenIn = TweenService:Create(IntroLabel, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UIDim2.new(0, 20, 0.1, 0)
+        Position = UDim2.new(0, 20, 0.1, 0)
     })
     tweenIn:Play()
     tweenIn.Completed:Wait()
     
     task.wait(2)
     
+    -- Защитная проверка на случай, если хаб удалили до завершения анимации
+    if not ScreenGui or not ScreenGui.Parent or not IntroLabel then return end
+    
     local tweenOut = TweenService:Create(IntroLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-        Position = UIDim2.new(0, -350, 0.1, 0)
+        Position = UDim2.new(0, -350, 0.1, 0)
     })
     tweenOut:Play()
     tweenOut.Completed:Wait()
     
-    IntroLabel:Destroy()
-    
-    -- Плавное появление главного окна хаба
-    MainFrame.Visible = true
-    MainFrame.ClipsDescendants = true
+    if IntroLabel then IntroLabel:Destroy() end
+    if MainFrame then
+        MainFrame.Visible = true
+        MainFrame.ClipsDescendants = true
+    end
 end)
