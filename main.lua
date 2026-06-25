@@ -1,5 +1,5 @@
 -- ====================================================================
--- 99 Nights in the Forest Hub v1.5 (Mammoth Filter & Anti-Crash Fixed)
+-- 99 Nights in the Forest Hub v1.6 (Food & Coal Update)
 -- Разработчик: Кирилл (Оптимизировано ИИ)
 -- ====================================================================
 
@@ -37,7 +37,7 @@ IntroLabel.Size = UDim2.new(0, 300, 0, 50)
 IntroLabel.Position = UDim2.new(0, -350, 0.1, 0)
 IntroLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 IntroLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-IntroLabel.Text = "Хаб успешно запущен!"
+IntroLabel.Text = "Хаб v1.6 успешно запущен!"
 IntroLabel.Font = Enum.Font.SourceSansBold
 IntroLabel.TextSize = 18
 IntroLabel.BorderSizePixel = 0
@@ -67,7 +67,6 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
--- Элемент UIScale для пропорционального изменения ВСЕГО интерфейса
 local UiScale = Instance.new("UIScale")
 UiScale.Scale = 1
 UiScale.Parent = MainFrame
@@ -87,14 +86,13 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "99 Nights Forest Hub v1.5"
+Title.Text = "99 Nights Forest Hub v1.6"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- Кнопка Закрыть (X)
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0, 30, 0, 30)
 CloseBtn.Position = UDim2.new(1, -40, 0, 5)
@@ -104,12 +102,8 @@ CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.Font = Enum.Font.SourceSansBold
 CloseBtn.TextSize = 14
 CloseBtn.Parent = TopBar
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
-CloseCorner.Parent = CloseBtn
-
--- Кнопка Свернуть (-)
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
 MinimizeBtn.Position = UDim2.new(1, -75, 0, 5)
@@ -119,12 +113,9 @@ MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinimizeBtn.Font = Enum.Font.SourceSansBold
 MinimizeBtn.TextSize = 14
 MinimizeBtn.Parent = TopBar
+Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 6)
 
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 6)
-MinCorner.Parent = MinimizeBtn
-
--- Боковое меню для вкладок
+-- Боковое меню
 local SideBar = Instance.new("Frame")
 SideBar.Size = UDim2.new(0, 120, 1, -40)
 SideBar.Position = UDim2.new(0, 0, 0, 40)
@@ -148,9 +139,7 @@ local SidePadding = Instance.new("UIPadding")
 SidePadding.PaddingTop = UDim.new(0, 10)
 SidePadding.Parent = SideBar
 
--- ==========================================
--- СКРИПТ ПЕРЕТАСКИВАНИЯ (С подстройкой под UIScale)
--- ==========================================
+-- Скрипт перетаскивания окна
 local dragging, dragInput, dragStart, startPos
 local function updateDrag(input)
     local delta = (input.Position - dragStart) / UiScale.Scale
@@ -164,9 +153,7 @@ TopBar.InputBegan:Connect(function(input)
         startPos = MainFrame.Position
         
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
         end)
     end
 end)
@@ -178,9 +165,7 @@ TopBar.InputChanged:Connect(function(input)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        updateDrag(input)
-    end
+    if input == dragInput and dragging then updateDrag(input) end
 end)
 
 -- ==========================================
@@ -200,10 +185,7 @@ local function createTab(tabName, order)
     TabBtn.TextSize = 14
     TabBtn.LayoutOrder = order
     TabBtn.Parent = SideBar
-    
-    local TabBtnCorner = Instance.new("UICorner")
-    TabBtnCorner.CornerRadius = UDim.new(0, 6)
-    TabBtnCorner.Parent = TabBtn
+    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
 
     local Page = Instance.new("Frame")
     Page.Size = UDim2.new(1, 0, 1, 0)
@@ -222,33 +204,25 @@ local function createTab(tabName, order)
     end)
 end
 
-for i, tabName in ipairs(tabs) do
-    createTab(tabName, i)
-end
-
+for i, tabName in ipairs(tabs) do createTab(tabName, i) end
 pages["Home"].Visible = true
 tabButtons["Home"].TextColor3 = Color3.fromRGB(0, 170, 255)
 
 -- ==========================================
--- 4. НАПОЛНЕНИЕ ВКЛАДКИ HOME
+-- 4 & 5. HOME И SETTINGS
 -- ==========================================
-local HomeLabel = Instance.new("TextLabel")
+local HomeLabel = Instance.new("TextLabel", pages["Home"])
 HomeLabel.Size = UDim2.new(1, -20, 1, -20)
 HomeLabel.Position = UDim2.new(0, 10, 0, 10)
 HomeLabel.BackgroundTransparency = 1
-HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.5\n\nИспользуй вкладки слева для конфигурации функций."
+HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.6 (Food & Coal Update)\n\nИспользуй вкладки слева для конфигурации функций."
 HomeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 HomeLabel.Font = Enum.Font.SourceSans
 HomeLabel.TextSize = 14
-HomeLabel.TextWrapped = true
-HomeLabel.TextYAlignment = Enum.TextYAlignment.Top
 HomeLabel.TextXAlignment = Enum.TextXAlignment.Left
-HomeLabel.Parent = pages["Home"]
+HomeLabel.TextYAlignment = Enum.TextYAlignment.Top
 
--- ==========================================
--- 5. НАПОЛНЕНИЕ ВКЛАДКИ SETTINGS (МАСШТАБИРОВАНИЕ)
--- ==========================================
-local SettingsLabel = Instance.new("TextLabel")
+local SettingsLabel = Instance.new("TextLabel", pages["Settings"])
 SettingsLabel.Size = UDim2.new(1, -20, 0, 30)
 SettingsLabel.Position = UDim2.new(0, 10, 0, 10)
 SettingsLabel.BackgroundTransparency = 1
@@ -257,9 +231,8 @@ SettingsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 SettingsLabel.Font = Enum.Font.SourceSans
 SettingsLabel.TextSize = 14
 SettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
-SettingsLabel.Parent = pages["Settings"]
 
-local ScaleInput = Instance.new("TextBox")
+local ScaleInput = Instance.new("TextBox", pages["Settings"])
 ScaleInput.Size = UDim2.new(0, 100, 0, 30)
 ScaleInput.Position = UDim2.new(0, 10, 0, 45)
 ScaleInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
@@ -267,112 +240,38 @@ ScaleInput.Text = "1"
 ScaleInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 ScaleInput.Font = Enum.Font.SourceSansBold
 ScaleInput.TextSize = 14
-ScaleInput.Parent = pages["Settings"]
+Instance.new("UICorner", ScaleInput).CornerRadius = UDim.new(0, 6)
 
-local ScaleCorner = Instance.new("UICorner")
-ScaleCorner.CornerRadius = UDim.new(0, 6)
-ScaleCorner.Parent = ScaleInput
-
-ScaleInput.FocusLost:Connect(function(enterPressed)
+ScaleInput.FocusLost:Connect(function()
     local num = tonumber(ScaleInput.Text)
     if num and num >= 0.3 and num <= 3 then
-        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        TweenService:Create(UiScale, tweenInfo, {Scale = num}):Play()
+        TweenService:Create(UiScale, TweenInfo.new(0.3), {Scale = num}):Play()
     else
         ScaleInput.Text = tostring(UiScale.Scale)
     end
 end)
-
--- ==========================================
--- 6. НАПОЛНЕНИЕ ВКЛАДКИ FARM (МЕНЮ СБОРА)
--- ==========================================
-local FarmPage = pages["Farm"]
-
-local ModeLabel = Instance.new("TextLabel")
-ModeLabel.Size = UDim2.new(1, -20, 0, 30)
-ModeLabel.Position = UDim2.new(0, 10, 0, 10)
-ModeLabel.BackgroundTransparency = 1
-ModeLabel.Text = "Сбор и телепортация бревен (Outer):"
-ModeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-ModeLabel.Font = Enum.Font.SourceSans
-ModeLabel.TextSize = 14
-ModeLabel.TextXAlignment = Enum.TextXAlignment.Left
-ModeLabel.Parent = FarmPage
-
--- Кнопка телепорта к Игроку
-local TpPlayerBtn = Instance.new("TextButton")
-TpPlayerBtn.Size = UDim2.new(1, -20, 0, 45)
-TpPlayerBtn.Position = UDim2.new(0, 10, 0, 50)
-TpPlayerBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-TpPlayerBtn.Text = "Телепортировать бревна к Себе"
-TpPlayerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TpPlayerBtn.Font = Enum.Font.SourceSansBold
-TpPlayerBtn.TextSize = 14
-TpPlayerBtn.Parent = FarmPage
-
-local TpPlayerCorner = Instance.new("UICorner")
-TpPlayerCorner.CornerRadius = UDim.new(0, 6)
-TpPlayerCorner.Parent = TpPlayerBtn
-
--- Кнопка телепорта к Костру
-local TpCampfireBtn = Instance.new("TextButton")
-TpCampfireBtn.Size = UDim2.new(1, -20, 0, 45)
-TpCampfireBtn.Position = UDim2.new(0, 10, 0, 110)
-TpCampfireBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-TpCampfireBtn.Text = "Телепортировать бревна к Костру"
-TpCampfireBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TpCampfireBtn.Font = Enum.Font.SourceSansBold
-TpCampfireBtn.TextSize = 14
-TpCampfireBtn.Parent = FarmPage
-
-local TpCampfireCorner = Instance.new("UICorner")
-TpCampfireCorner.CornerRadius = UDim.new(0, 6)
-TpCampfireCorner.Parent = TpCampfireBtn
-
--- Кнопка телепорта к Верстаку/Дробилке
-local TpWorkbenchBtn = Instance.new("TextButton")
-TpWorkbenchBtn.Size = UDim2.new(1, -20, 0, 45)
-TpWorkbenchBtn.Position = UDim2.new(0, 10, 0, 170)
-TpWorkbenchBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-TpWorkbenchBtn.Text = "Телепортировать бревна в Дробилку"
-TpWorkbenchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TpWorkbenchBtn.Font = Enum.Font.SourceSansBold
-TpWorkbenchBtn.TextSize = 14
-TpWorkbenchBtn.Parent = FarmPage
-
-local TpWorkbenchCorner = Instance.new("UICorner")
-TpWorkbenchCorner.CornerRadius = UDim.new(0, 6)
-TpWorkbenchCorner.Parent = TpWorkbenchBtn
 
 
 -- ==========================================
 -- СИСТЕМА УВЕДОМЛЕНИЙ (Стек замещения)
 -- ==========================================
 local currentNotification = nil
-
 local function showNotification(text)
-    if currentNotification then
-        pcall(function() currentNotification:Destroy() end)
-    end
+    if currentNotification then pcall(function() currentNotification:Destroy() end) end
 
-    local NotificationFrame = Instance.new("Frame")
-    currentNotification = NotificationFrame
-    NotificationFrame.Size = UDim2.new(0, 270, 0, 45)
-    NotificationFrame.Position = UDim2.new(1, 10, 0.85, 0)
-    NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    NotificationFrame.BorderSizePixel = 0
-    NotificationFrame.Parent = ScreenGui
-
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 6)
-    Corner.Parent = NotificationFrame
-
-    local Stroke = Instance.new("UIStroke")
+    local NotifFrame = Instance.new("Frame", ScreenGui)
+    currentNotification = NotifFrame
+    NotifFrame.Size = UDim2.new(0, 280, 0, 45)
+    NotifFrame.Position = UDim2.new(1, 10, 0.85, 0)
+    NotifFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NotifFrame.BorderSizePixel = 0
+    Instance.new("UICorner", NotifFrame).CornerRadius = UDim.new(0, 6)
+    
+    local Stroke = Instance.new("UIStroke", NotifFrame)
     Stroke.Color = Color3.fromRGB(0, 170, 255)
     Stroke.Thickness = 1.5
-    Stroke.Parent = NotificationFrame
 
-    local Label = Instance.new("TextLabel")
+    local Label = Instance.new("TextLabel", NotifFrame)
     Label.Size = UDim2.new(1, -20, 1, 0)
     Label.Position = UDim2.new(0, 10, 0, 0)
     Label.BackgroundTransparency = 1
@@ -381,114 +280,73 @@ local function showNotification(text)
     Label.Font = Enum.Font.SourceSansBold
     Label.TextSize = 14
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = NotificationFrame
 
-    -- Анимация выезда на экран
-    local tweenIn = TweenService:Create(NotificationFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(1, -285, 0.85, 0)
-    })
-    tweenIn:Play()
-
-    -- Исчезновение через 3 секунды
+    TweenService:Create(NotifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -290, 0.85, 0)}):Play()
+    
     task.delay(3, function()
-        if NotificationFrame and NotificationFrame.Parent then
-            local tweenOut = TweenService:Create(NotificationFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-                Position = UDim2.new(1, 10, 0.85, 0)
-            })
+        if NotifFrame and NotifFrame.Parent then
+            local tweenOut = TweenService:Create(NotifFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 10, 0.85, 0)})
             tweenOut:Play()
             tweenOut.Completed:Wait()
-            if NotificationFrame then NotificationFrame:Destroy() end
+            if NotifFrame then NotifFrame:Destroy() end
         end
     end)
 end
 
-
 -- ==========================================
--- 7. ЛОГИКА ОПРЕДЕЛЕНИЯ ЦЕЛЕЙ И ПЕРЕНОСА ОБЪЕКТОВ
+-- 7. УНИВЕРСАЛЬНАЯ ЛОГИКА СБОРА
 -- ==========================================
-
--- Получение точной позиции костра
 local function getCampfirePosition()
-    local map = workspace:FindFirstChild("Map")
-    local campground = map and map:FindFirstChild("Campground")
-    local mainFire = campground and campground:FindFirstChild("MainFire")
-    local model = mainFire and mainFire:FindFirstChild("Model")
-    local logCylinder = model and model:FindFirstChild("Meshes/log_Cylinder")
-    
-    if logCylinder and logCylinder:IsA("BasePart") then
-        return logCylinder.CFrame
-    end
-    
+    local mainFire = workspace:FindFirstChild("MainFire", true)
     if mainFire then
-        return mainFire:GetPivot()
-    end
-    
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "MainFire" then
-            return obj:GetPivot()
-        end
+        local logCylinder = mainFire:FindFirstChild("log_Cylinder", true)
+        return logCylinder and logCylinder.CFrame or mainFire:GetPivot()
     end
     return nil
 end
 
--- Получение точной позиции центра дробилки (верстака)
 local function getWorkbenchPosition()
-    local leftPart, rightPart
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            if obj.Name == "GrindersLeft" then leftPart = obj end
-            if obj.Name == "GrindersRight" then rightPart = obj end
-        end
-        if leftPart and rightPart then break end
-    end
-    
-    if leftPart and rightPart then
-        return CFrame.new((leftPart.Position + rightPart.Position) / 2)
-    end
-    
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj.Name:lower():find("workbench") or obj.Name:lower():find("grinder") then
-            if obj:IsA("Model") then
-                return obj:GetPivot()
-            elseif obj:IsA("BasePart") then
-                return obj.CFrame
-            end
+            if obj:IsA("Model") then return obj:GetPivot()
+            elseif obj:IsA("BasePart") then return obj.CFrame end
         end
     end
     return nil
 end
 
--- Потоковая функция сбора бревен
-local function collectAllLogs(targetMode)
+-- Универсальная функция, собирающая ЛЮБОЙ переданный предмет ( itemName )
+local function collectItems(targetMode, itemName)
     local player = Players.LocalPlayer
     if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
     
     local hrp = player.Character.HumanoidRootPart
-    local targetCFrame
-    local destName = ""
+    local targetCFrame, destName = nil, ""
     
     if targetMode == "Player" then
-        targetCFrame = hrp.CFrame * CFrame.new(0, 0, -4) -- ИСПРАВЛЕНО: Никаких UDim2! Скрипт больше не падает.
-        destName = "player"
+        targetCFrame = hrp.CFrame * CFrame.new(0, 0, -4)
+        destName = "Себе"
     elseif targetMode == "Campfire" then
         targetCFrame = getCampfirePosition()
-        destName = "campfire"
+        destName = "Костру"
     elseif targetMode == "Workbench" then
         targetCFrame = getWorkbenchPosition()
-        destName = "grinder"
+        destName = "Дробилке"
     end
     
     if not targetCFrame and targetMode ~= "Player" then return end
     
-    -- Ищем бревна в контейнере дропов или по всей карте
-    local logs = {}
+    local itemsFound = {}
     local itemContainer = workspace:FindFirstChild("Drops") or workspace:FindFirstChild("ItemSpawns") or workspace:FindFirstChild("Loot") or workspace
     
     local function scan(container)
         for _, item in pairs(container:GetChildren()) do
-            -- ИСПРАВЛЕНО: Проверяем размер, чтобы полностью игнорировать огромную платформу мамонтов!
-            if item:IsA("BasePart") and item.Name == "Outer" and item.Size.X < 10 and item.Size.Z < 10 then
-                table.insert(logs, item)
+            if item:IsA("BasePart") and item.Name == itemName then
+                -- Mammoth Filter: проверяем размер только если ищем бревна (Outer)
+                if itemName == "Outer" and (item.Size.X >= 10 or item.Size.Z >= 10) then
+                    continue 
+                end
+                table.insert(itemsFound, item)
             end
         end
     end
@@ -496,30 +354,24 @@ local function collectAllLogs(targetMode)
     scan(itemContainer)
     if itemContainer == workspace then
         for _, item in pairs(workspace:GetDescendants()) do
-            -- ИСПРАВЛЕНО: Платформа мамонтов огромная (более 40 блоков), а бревна маленькие. Фильтруем по размеру.
-            if item:IsA("BasePart") and item.Name == "Outer" and item.Size.X < 10 and item.Size.Z < 10 then
-                if not table.find(logs, item) then
-                    table.insert(logs, item)
-                end
+            if item:IsA("BasePart") and item.Name == itemName then
+                if itemName == "Outer" and (item.Size.X >= 10 or item.Size.Z >= 10) then continue end
+                if not table.find(itemsFound, item) then table.insert(itemsFound, item) end
             end
         end
     end
     
-    local logCount = #logs
-    if logCount == 0 then
-        showNotification("No logs found to gather!")
+    if #itemsFound == 0 then
+        showNotification("Не найдено предметов: " .. itemName .. "!")
         return
     end
     
-    -- Вывод выезжающего текста
-    showNotification("Grab: " .. tostring(logCount) .. " logs to the " .. destName)
+    showNotification("Сбор: " .. tostring(#itemsFound) .. " " .. itemName .. " -> " .. destName)
     
-    -- Потоковый перенос бревен (по одному)
     task.spawn(function()
-        for i, item in ipairs(logs) do
+        for i, item in ipairs(itemsFound) do
             if not item or not item.Parent then continue end
             
-            -- Удаляем физические ограничители
             if item:FindFirstChild("BodyPosition") then item.BodyPosition:Destroy() end
             if item:FindFirstChild("BodyGyro") then item.BodyGyro:Destroy() end
             
@@ -529,19 +381,13 @@ local function collectAllLogs(targetMode)
             end)
             
             if targetMode == "Player" then
-                -- К игроку: переносим в красивую кучку перед ним
                 item.CanCollide = true
-                item.CFrame = targetCFrame * CFrame.new(math.random(-1, 1) * 2, 0, math.random(-1, 1) * 2)
+                item.CFrame = targetCFrame * CFrame.new(math.random(-1, 1) * 1.5, 0, math.random(-1, 1) * 1.5)
             else
-                -- К Костру или Дробилке:
-                -- 1. Сначала переносим прямо над головой игрока на 0.02 секунды (захват Network Ownership)
                 if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                     item.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 6, 0)
                 end
-                
                 task.wait(0.02)
-                
-                -- 2. Переносим к цели, приподнимая на 3 блока, и задаем скорость вниз (принудительный Touched)
                 if item and item.Parent then
                     pcall(function()
                         item.AssemblyLinearVelocity = Vector3.new(0, -6, 0)
@@ -549,33 +395,92 @@ local function collectAllLogs(targetMode)
                     end)
                 end
             end
-            
-            -- Интервал между бревнами, чтобы сервер успевал регистрировать
             task.wait(0.03)
         end
     end)
 end
 
--- Подключение кнопок сбора к функциям
-TpPlayerBtn.MouseButton1Click:Connect(function()
-    collectAllLogs("Player")
+
+-- ==========================================
+-- 6. НАПОЛНЕНИЕ ВКЛАДКИ FARM (СКРОЛЛИНГ И КНОПКИ)
+-- ==========================================
+local FarmPage = pages["Farm"]
+
+-- Создаем ScrollingFrame, чтобы кнопки не вылезали за пределы окна
+local FarmScroll = Instance.new("ScrollingFrame")
+FarmScroll.Size = UDim2.new(1, 0, 1, 0)
+FarmScroll.BackgroundTransparency = 1
+FarmScroll.BorderSizePixel = 0
+FarmScroll.ScrollBarThickness = 4
+FarmScroll.Parent = FarmPage
+
+local FarmLayout = Instance.new("UIListLayout")
+FarmLayout.Padding = UDim.new(0, 6)
+FarmLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+FarmLayout.SortOrder = Enum.SortOrder.LayoutOrder
+FarmLayout.Parent = FarmScroll
+
+local FarmPadding = Instance.new("UIPadding")
+FarmPadding.PaddingTop = UDim.new(0, 10)
+FarmPadding.PaddingBottom = UDim.new(0, 10)
+FarmPadding.Parent = FarmScroll
+
+-- Автоматическое изменение размера зоны скроллинга
+FarmLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    FarmScroll.CanvasSize = UDim2.new(0, 0, 0, FarmLayout.AbsoluteContentSize.Y + 20)
 end)
 
-TpCampfireBtn.MouseButton1Click:Connect(function()
-    collectAllLogs("Campfire")
-end)
+-- Функции-помощники для создания секций и кнопок
+local function createLabel(text, order)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -20, 0, 20)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = text
+    lbl.TextColor3 = Color3.fromRGB(200, 200, 200)
+    lbl.Font = Enum.Font.SourceSansBold
+    lbl.TextSize = 14
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.LayoutOrder = order
+    lbl.Parent = FarmScroll
+end
 
-TpWorkbenchBtn.MouseButton1Click:Connect(function()
-    collectAllLogs("Workbench")
-end)
+local function createButton(text, color, order, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -30, 0, 35)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 14
+    btn.LayoutOrder = order
+    btn.Parent = FarmScroll
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    btn.MouseButton1Click:Connect(callback)
+end
+
+-- --- ГЕНЕРАЦИЯ КНОПОК ФАРМА ---
+
+-- ДЕРЕВО
+createLabel("🪵 Сбор дерева (Outer):", 1)
+createButton("Бревна к Себе", Color3.fromRGB(0, 170, 255), 2, function() collectItems("Player", "Outer") end)
+createButton("Бревна к Костру", Color3.fromRGB(45, 45, 45), 3, function() collectItems("Campfire", "Outer") end)
+createButton("Бревна в Дробилку", Color3.fromRGB(45, 45, 45), 4, function() collectItems("Workbench", "Outer") end)
+
+-- РУДА И УГОЛЬ
+createLabel("🪨 Руда и Уголь:", 5)
+createButton("Уголь (Coal) к Себе", Color3.fromRGB(0, 170, 255), 6, function() collectItems("Player", "Coal") end)
+
+-- ЕДА
+createLabel("🍖 Сбор еды:", 7)
+createButton("Морсель (Morsel) к Себе", Color3.fromRGB(0, 170, 255), 8, function() collectItems("Player", "Morsel") end)
+createButton("Мясо (Meat) к Себе", Color3.fromRGB(0, 170, 255), 9, function() collectItems("Player", "Meat") end)
 
 
 -- ==========================================
 -- 8. СВЕРТЫВАНИЕ И ЗАКРЫТИЕ ХАБА
 -- ==========================================
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
 local minimized = false
 MinimizeBtn.MouseButton1Click:Connect(function()
@@ -594,14 +499,12 @@ MinimizeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- 9. СТАРТ АНИМАЦИИ ИНТРО И ОТКРЫТИЕ ОКНА
+-- 9. СТАРТ АНИМАЦИИ ИНТРО
 -- ==========================================
 task.spawn(function()
     if not IntroLabel or not ScreenGui then return end
     
-    local tweenIn = TweenService:Create(IntroLabel, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(0, 20, 0.1, 0)
-    })
+    local tweenIn = TweenService:Create(IntroLabel, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0, 20, 0.1, 0)})
     tweenIn:Play()
     tweenIn.Completed:Wait()
     
@@ -609,9 +512,7 @@ task.spawn(function()
     
     if not ScreenGui or not ScreenGui.Parent or not IntroLabel then return end
     
-    local tweenOut = TweenService:Create(IntroLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-        Position = UDim2.new(0, -350, 0.1, 0)
-    })
+    local tweenOut = TweenService:Create(IntroLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(0, -350, 0.1, 0)})
     tweenOut:Play()
     tweenOut.Completed:Wait()
     
