@@ -1,5 +1,5 @@
 -- ====================================================================
--- 99 Nights in the Forest Hub v1.8 (Custom Items & Base64 Save)
+-- 99 Nights in the Forest Hub v1.9 (Smart Custom Paths & Base64 Save)
 -- Разработчик: Кирилл (Оптимизировано ИИ)
 -- ====================================================================
 
@@ -84,7 +84,7 @@ local Title = Instance.new("TextLabel", TopBar)
 Title.Size = UDim2.new(0, 250, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "99 Nights Forest Hub v1.8"
+Title.Text = "99 Nights Forest Hub v1.9"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 16
@@ -219,7 +219,7 @@ local HomeLabel = Instance.new("TextLabel", pages["Home"])
 HomeLabel.Size = UDim2.new(1, -20, 1, -20)
 HomeLabel.Position = UDim2.new(0, 10, 0, 10)
 HomeLabel.BackgroundTransparency = 1
-HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.8 (Custom Items & Config)\n\nСюда добавлены новые предметы, вкладка кастомных предметов и система сохранения настроек!"
+HomeLabel.Text = "Добро пожаловать в 99 Nights in the Forest Hub!\n\nРазработчик: Кирилл\nВерсия: 1.9 (Smart Custom Paths)\n\nСюда добавлена умная обрезка путей для Custom Items и сохранение в Base64!"
 HomeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 HomeLabel.Font = Enum.Font.SourceSans
 HomeLabel.TextSize = 15
@@ -264,7 +264,6 @@ Grid.SortOrder = Enum.SortOrder.LayoutOrder
 
 local itemBtns = {}
 
--- Функция отрисовки кнопок (вызывается при старте и после добавления кастомных)
 local function refreshFarmGrid()
     for _, btn in pairs(itemBtns) do btn:Destroy() end
     itemBtns = {}
@@ -395,39 +394,43 @@ createDestBtn("Телепортировать В ДРОБИЛКУ", Color3.fromR
 
 
 -- ==========================================
--- Вкладка CUSTOM (Добавление предметов)
+-- Вкладка CUSTOM (Умная обрезка путей)
 -- ==========================================
 local CustomPage = pages["Custom"]
 local CustomLayout = Instance.new("UIListLayout", CustomPage)
-CustomLayout.Padding = UDim.new(0, 8)
+CustomLayout.Padding = UDim.new(0, 10)
 Instance.new("UIPadding", CustomPage).PaddingTop = UDim.new(0, 10)
 Instance.new("UIPadding", CustomPage).PaddingLeft = UDim.new(0, 10)
 
-local function makeCustomInput(placeholder)
-    local tb = Instance.new("TextBox", CustomPage)
-    tb.Size = UDim2.new(1, -20, 0, 35)
-    tb.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    tb.PlaceholderText = placeholder
-    tb.Text = ""
-    tb.TextColor3 = Color3.fromRGB(255, 255, 255)
-    tb.Font = Enum.Font.SourceSans
-    tb.TextSize = 14
-    Instance.new("UICorner", tb).CornerRadius = UDim.new(0, 6)
-    return tb
-end
-
 local CustomInfo = Instance.new("TextLabel", CustomPage)
-CustomInfo.Size = UDim2.new(1, -20, 0, 20)
+CustomInfo.Size = UDim2.new(1, -20, 0, 35)
 CustomInfo.BackgroundTransparency = 1
-CustomInfo.Text = "Добавьте свой путь, например: Workspace.Items.Apple.Handle"
+CustomInfo.Text = "Скопируйте полный путь в игру и вставьте сюда.\nСкрипт сам вырежет нужное."
 CustomInfo.TextColor3 = Color3.fromRGB(180, 180, 180)
 CustomInfo.Font = Enum.Font.SourceSansBold
 CustomInfo.TextSize = 14
 CustomInfo.TextXAlignment = Enum.TextXAlignment.Left
 
-local InputModel = makeCustomInput("Имя модели (напр. Apple)")
-local InputPart = makeCustomInput("Деталь модели (напр. Handle, или пусто)")
-local InputName = makeCustomInput("Название кнопки (напр. Яблоко)")
+local InputName = Instance.new("TextBox", CustomPage)
+InputName.Size = UDim2.new(1, -20, 0, 35)
+InputName.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+InputName.PlaceholderText = "Имя кнопки (напр. Вентилятор)"
+InputName.Text = ""
+InputName.TextColor3 = Color3.fromRGB(255, 255, 255)
+InputName.Font = Enum.Font.SourceSans
+InputName.TextSize = 14
+Instance.new("UICorner", InputName).CornerRadius = UDim.new(0, 6)
+
+local InputPath = Instance.new("TextBox", CustomPage)
+InputPath.Size = UDim2.new(1, -20, 0, 35)
+InputPath.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+InputPath.PlaceholderText = "Путь: game:GetService(\"Workspace\").Items..."
+InputPath.Text = ""
+InputPath.TextColor3 = Color3.fromRGB(255, 255, 255)
+InputPath.Font = Enum.Font.SourceSans
+InputPath.TextSize = 14
+InputPath.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", InputPath).CornerRadius = UDim.new(0, 6)
 
 local AddCustomBtn = Instance.new("TextButton", CustomPage)
 AddCustomBtn.Size = UDim2.new(1, -20, 0, 40)
@@ -438,14 +441,40 @@ AddCustomBtn.Font = Enum.Font.SourceSansBold
 AddCustomBtn.TextSize = 14
 Instance.new("UICorner", AddCustomBtn).CornerRadius = UDim.new(0, 6)
 
-AddCustomBtn.MouseButton1Click:Connect(function()
-    local mdl, prt, nm = InputModel.Text, InputPart.Text, InputName.Text
-    if mdl == "" or nm == "" then return showNotification("Имя модели и кнопки обязательны!") end
+-- Функция-Парсер, которая "жует" строку и достает модель и деталь
+local function parseItemPath(fullPath)
+    -- Пробуем найти паттерн типа: Items["Broken Fan"].Main
+    local mdl, prt = fullPath:match('Items%["(.-)"%]%.?(.*)')
+    if not mdl then
+        -- Если не сработало, пробуем паттерн типа: Items.Apple.Handle
+        mdl, prt = fullPath:match('Items%.([^%.]+)%.?(.*)')
+    end
     
-    table.insert(customItems, { name = nm, match = mdl, requirePart = (prt ~= "" and prt or nil) })
+    -- Возвращаем Имя Модели и Имя Детали (если деталь пустая, возвращаем nil)
+    if mdl then
+        return mdl, (prt ~= "" and prt or nil)
+    end
+    return nil, nil
+end
+
+AddCustomBtn.MouseButton1Click:Connect(function()
+    local btnName = InputName.Text
+    local rawPath = InputPath.Text
+
+    if btnName == "" or rawPath == "" then 
+        return showNotification("Заполните оба поля (Имя и Путь)!") 
+    end
+    
+    local modelStr, partStr = parseItemPath(rawPath)
+
+    if not modelStr then
+        return showNotification("Ошибка: Не могу распознать путь. Проверьте правильность (должно содержать '.Items.')")
+    end
+    
+    table.insert(customItems, { name = btnName, match = modelStr, requirePart = partStr })
     refreshFarmGrid()
-    showNotification("Добавлено: " .. nm)
-    InputModel.Text, InputPart.Text, InputName.Text = "", "", ""
+    showNotification("Успех! '" .. btnName .. "' добавлен в Farm.")
+    InputName.Text, InputPath.Text = "", ""
 end)
 
 -- ==========================================
